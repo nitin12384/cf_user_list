@@ -61,7 +61,7 @@ def generate_user_diff_submissions(submissions):
         user_diff_submissions[rating] = { "count" : 0, "problems" : set()}
     
     num_solved = 0
-    num_rating_unavailable = 0
+    solved_rating_unavailable = set()
     
 
     for submission in submissions:
@@ -72,7 +72,7 @@ def generate_user_diff_submissions(submissions):
                 rating = submission["problem"]["rating"]
                 user_diff_submissions[rating]["problems"].add(problem_id)
             except KeyError:
-                num_rating_unavailable += 1
+                solved_rating_unavailable.add(problem_id)
                 pass
 
     
@@ -80,6 +80,10 @@ def generate_user_diff_submissions(submissions):
         user_diff_submissions[rating]["problems"] = list(user_diff_submissions[rating]["problems"])
         user_diff_submissions[rating]["count"] = len(user_diff_submissions[rating]["problems"])
         num_solved += user_diff_submissions[rating]["count"]
+    
+    num_solved += len(solved_rating_unavailable)
+
+    user_diff_submissions["total_count"] = num_solved
 
     return user_diff_submissions
 
