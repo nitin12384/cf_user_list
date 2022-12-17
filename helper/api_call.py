@@ -30,4 +30,9 @@ class Codeforces:
 
     @staticmethod
     def get_user_submissions(handle: str):
-        return CodeforcesAPI.perform_api_call("https://codeforces.com/api/user.status?handle=" + handle)
+        submissions = CodeforcesAPI.perform_api_call("https://codeforces.com/api/user.status?handle=" + handle)
+        if submissions["status"] == "FAILED":
+            logger.error("Handle " + handle + " doesnot exist")
+            return None 
+        else :
+            return submissions

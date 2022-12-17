@@ -3,6 +3,7 @@ import json
 
 # Todo  
 # Error handling in json.dump(), json.load()
+# What if user handle containg characters that cannot be used in file naming, like obscure UTF characters
 
 def generate_problemset_diff_cnt(problemset):
     problemset_diff_cnt = {}
@@ -10,11 +11,10 @@ def generate_problemset_diff_cnt(problemset):
     for rating in range(low, high+step, step):
         problemset_diff_cnt[rating] = 0
     
-    problem_list = problemset["result"]["problems"]
-    problem_cnt = len(problem_list)
+    problem_cnt = len(problemset)
     rating_unavailable_cnt = 0
 
-    for problem in problem_list:
+    for problem in problemset:
         try:
             rating = problem["rating"]
             problemset_diff_cnt[rating] += 1
@@ -27,10 +27,10 @@ def generate_problemset_diff_cnt(problemset):
     return problemset_diff_cnt
 
 def load_problemset():
-    problemset = api_call.Codeforces.get_problemset()
+    problemset_response = api_call.Codeforces.get_problemset()
 
     problemset_file = open(config.cf_problemset_path, "w")
-    json.dump(problemset, problemset_file)
+    json.dump(problemset_response["result"]["problems"], problemset_file)
     problemset_file.close()
 
 def load_problemset_diff_count():
@@ -44,3 +44,16 @@ def load_problemset_diff_count():
     
     json.dump(problemset_diff_cnt, problemset_diff_count_file)
     problemset_file.close()
+    problemset_diff_count_file.close()
+
+def load_user_submission(handle : str):
+    submissions_resp = api_call.Codeforces.get_user_submissions(handle)
+    if submissions_resp is not None :
+        submissions_file_path = config.cf_user_submission_base_path + '/' + handle + ".json"
+        submissions_file = open(submissions_file_path, "w")
+        json.dump(submissions_resp["result"], submissions_file)
+        submissions_file.close()
+    
+
+    
+
