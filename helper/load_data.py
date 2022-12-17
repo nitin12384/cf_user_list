@@ -46,6 +46,8 @@ def load_problemset_diff_count():
     problemset_file.close()
     problemset_diff_count_file.close()
 
+    return problemset_diff_cnt
+
 def load_user_submission(handle : str):
     submissions_resp = api_call.Codeforces.get_user_submissions(handle)
     if submissions_resp is not None :
@@ -101,6 +103,8 @@ def load_user_diff_submissions(handle : str):
 
     user_diff_submissions_file.close()
     submissions_file.close()
+
+    return user_diff_submissions
 
     
 
