@@ -53,7 +53,50 @@ def load_user_submission(handle : str):
         submissions_file = open(submissions_file_path, "w")
         json.dump(submissions_resp["result"], submissions_file)
         submissions_file.close()
+
+def generate_user_diff_submissions(submissions):
+    user_diff_submissions = {}
+    low, high, step = 800, 3500, 100
+    for rating in range(low, high+step, step):
+        user_diff_submissions[rating] = { "count" : 0, "problems" : set()}
     
+    num_solved = 0
+    num_rating_unavailable = 0
+    
+
+    for submission in submissions:
+        if submission["verdict"] == "OK":
+            problem_id = str(submission["problem"]["contestId"]) + "-" + submission["problem"]["index"] 
+            
+            try:
+                rating = submission["problem"]["rating"]
+                user_diff_submissions[rating]["problems"].add(problem_id)
+            except KeyError:
+                num_rating_unavailable += 1
+                pass
+
+    
+    for rating in range(low, high+step, step):
+        user_diff_submissions[rating]["problems"] = list(user_diff_submissions[rating]["problems"])
+        user_diff_submissions[rating]["count"] = len(user_diff_submissions[rating]["problems"])
+        num_solved += user_diff_submissions[rating]["count"]
+
+    return user_diff_submissions
+
+# requires user submissions to be loaded
+def load_user_diff_submissions(handle : str):
+    submissions_file_path = config.cf_user_submission_base_path + "/" + handle + ".json"
+    submissions_file = open(submissions_file_path, "r")
+    submissions = json.load(submissions_file)
+    
+    user_diff_submissions = generate_user_diff_submissions(submissions)
+    user_diff_submissions_file_path = config.cf_user_submission_diff_base_path + "/" + handle + ".json"
+    user_diff_submissions_file = open(user_diff_submissions_file_path, "w")
+
+    json.dump(user_diff_submissions, user_diff_submissions_file)
+
+    user_diff_submissions_file.close()
+    submissions_file.close()
 
     
 
