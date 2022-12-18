@@ -9,7 +9,8 @@ import time
 def generate_problemset_diff_cnt(problemset):
     problemset_diff_cnt = {}
     low, high, step = 800, 3500, 100
-    for rating in range(low, high+step, step):
+    for rating_int in range(low, high+step, step):
+        rating = str(rating_int)
         problemset_diff_cnt[rating] = 0
     
     problem_cnt = len(problemset)
@@ -17,7 +18,7 @@ def generate_problemset_diff_cnt(problemset):
 
     for problem in problemset:
         try:
-            rating = problem["rating"]
+            rating = str(problem["rating"])
             problemset_diff_cnt[rating] += 1
         except KeyError:
             rating_unavailable_cnt += 1
@@ -28,11 +29,16 @@ def generate_problemset_diff_cnt(problemset):
     return problemset_diff_cnt
 
 
-def generate_user_diff_submissions(submissions):
+def generate_user_diff_submissions(submissions, problemset_diff_cnt):
     user_diff_submissions = {}
     low, high, step = 800, 3500, 100
-    for rating in range(low, high+step, step):
-        user_diff_submissions[rating] = { "count" : 0, "problems" : set()}
+    for rating_int in range(low, high+step, step):
+        rating = str(rating_int)
+        user_diff_submissions[rating] = { 
+            "count_solved" : 0, 
+            "count_total" : problemset_diff_cnt[rating],
+            "problems" : set()
+        }
     
     num_solved = 0
     solved_rating_unavailable = set()
@@ -100,7 +106,7 @@ def load_problemset(force_reload = False, return_problemset = False):
         return problemset_diff_cnt
 
 # Only return the difficulty wise submissions
-def load_user_submission(handle : str, force_reload = False):
+def load_user_submission(handle : str, problemset_diff_cnt , force_reload = False):
     last_load = tool_config.cf_tool_config.get_last_load_sub(handle)
     cur_time = time.time_ns()
     
@@ -116,7 +122,7 @@ def load_user_submission(handle : str, force_reload = False):
         
         submissions_resp = api_call.Codeforces.get_user_submissions(handle)
         submissions = submissions_resp["result"]
-        user_diff_submissions = generate_user_diff_submissions(submissions)    
+        user_diff_submissions = generate_user_diff_submissions(submissions, problemset_diff_cnt)    
 
         with open(submissions_file_path, "w") as submissions_file :
             json.dump(submissions, submissions_file)
