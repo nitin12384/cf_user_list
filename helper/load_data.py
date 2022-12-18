@@ -1,5 +1,6 @@
-from . import api_call, config
+from . import api_call, config, logger, tool_config
 import json
+import time
 
 # Todo  
 # Error handling in json.dump(), json.load()
@@ -26,37 +27,6 @@ def generate_problemset_diff_cnt(problemset):
 
     return problemset_diff_cnt
 
-# load problemset into file, and return problemset object
-def load_problemset(force_reload = False):
-
-    problemset_response = api_call.Codeforces.get_problemset()
-
-    problemset_file = open(config.cf_problemset_path, "w")
-    json.dump(problemset_response["result"]["problems"], problemset_file)
-    problemset_file.close()
-
-def load_problemset_diff_count():
-    problemset_file = open(config.cf_problemset_path, "r")
-    problemset = json.load(problemset_file)
-
-
-    problemset_diff_cnt = generate_problemset_diff_cnt(problemset)
-    problemset_diff_count_file = open(config.cf_problemset_diff_cnt_path, "w")
-    
-    
-    json.dump(problemset_diff_cnt, problemset_diff_count_file)
-    problemset_file.close()
-    problemset_diff_count_file.close()
-
-    return problemset_diff_cnt
-
-def load_user_submission(handle : str):
-    submissions_resp = api_call.Codeforces.get_user_submissions(handle)
-    if submissions_resp is not None :
-        submissions_file_path = config.cf_user_submission_base_path + '/' + handle + ".json"
-        submissions_file = open(submissions_file_path, "w")
-        json.dump(submissions_resp["result"], submissions_file)
-        submissions_file.close()
 
 def generate_user_diff_submissions(submissions):
     user_diff_submissions = {}
@@ -91,22 +61,69 @@ def generate_user_diff_submissions(submissions):
 
     return user_diff_submissions
 
-# requires user submissions to be loaded
-def load_user_diff_submissions(handle : str):
-    submissions_file_path = config.cf_user_submission_base_path + "/" + handle + ".json"
-    submissions_file = open(submissions_file_path, "r")
-    submissions = json.load(submissions_file)
+
+# load problemset into file, and return problemset object and problemset_diff_cnt object
+def load_problemset(force_reload = False, return_problemset = False):
+    last_load = tool_config.cf_tool_config.get_last_load_pset()
+    cur_time = time.time_ns()
+
+    problemset, problemset_diff_cnt = None, None
+
+    if cur_time - last_load < config.cf_problemset_reload_lim_ns and not force_reload :
+        logger.log("Not reloading problemset, because last load was recent.")
+
+        if return_problemset:
+            with open(config.cf_problemset_path, "r") as problemset_file :
+                problemset = json.load(problemset_file)
+            
+        with open(config.cf_problemset_diff_cnt_path, "r") as problemset_diff_cnt_file :
+            problemset_diff_cnt = json.load(problemset_diff_cnt_file)
+        
+
+    else:        
+        logger.log("Reloading Problemset")
+        problemset_response = api_call.Codeforces.get_problemset()
+        problemset = problemset_response["result"]["problems"]
+        problemset_diff_cnt = generate_problemset_diff_cnt(problemset)
+        tool_config.cf_tool_config.set_last_load_pset(time.time_ns())
+
+        with open(config.cf_problemset_path, "w") as problemset_file :
+            json.dump(problemset, problemset_file)
+
+        with open(config.cf_problemset_diff_cnt_path, "w") as problemset_diff_cnt_file :
+            json.dump(problemset_diff_cnt, problemset_diff_cnt_file)
     
-    user_diff_submissions = generate_user_diff_submissions(submissions)
-    user_diff_submissions_file_path = config.cf_user_submission_diff_base_path + "/" + handle + ".json"
-    user_diff_submissions_file = open(user_diff_submissions_file_path, "w")
 
-    json.dump(user_diff_submissions, user_diff_submissions_file)
+    if return_problemset :
+        return problemset_diff_cnt, problemset
+    else :
+        return problemset_diff_cnt
 
-    user_diff_submissions_file.close()
-    submissions_file.close()
-
-    return user_diff_submissions
-
+# Only return the difficulty wise submissions
+def load_user_submission(handle : str, force_reload = False):
+    last_load = tool_config.cf_tool_config.get_last_load_sub(handle)
+    cur_time = time.time_ns()
     
+    user_diff_sub = None
+    user_diff_sub_file_path = config.cf_user_submission_diff_base_path + "/" + handle + ".json"
+    
+    # No need to reload
+    if cur_time - last_load < config.cf_user_submission_reload_lim_ns and (not force_reload):
+        with open(user_diff_sub_file_path, "r") as f :
+            user_diff_sub = json.load(f)
+    else:
+        submissions_file_path = config.cf_user_submission_base_path + '/' + handle + ".json"
+        
+        submissions_resp = api_call.Codeforces.get_user_submissions(handle)
+        submissions = submissions_resp["result"]
+        user_diff_submissions = generate_user_diff_submissions(submissions)    
+
+        with open(submissions_file_path, "w") as submissions_file :
+            json.dump(submissions, submissions_file)
+        
+        with open(user_diff_sub_file_path, "w") as user_diff_sub_file:
+            json.dump(user_diff_submissions, user_diff_sub_file)
+        
+    return user_diff_sub
+
 
