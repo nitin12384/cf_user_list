@@ -134,3 +134,6 @@ data/codeforces/diff_submissions/*
 data/codeforces/user_submissions/*
 !data/codeforces/diff_submissions/.gitkeep
 !data/codeforces/user_submissions/.gitkeep
+data/codeforces/tool_config.json
+data/codeforces/problemset.json
+data/codeforces/pset_diff_cnt.json
