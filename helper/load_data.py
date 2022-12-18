@@ -26,7 +26,9 @@ def generate_problemset_diff_cnt(problemset):
 
     return problemset_diff_cnt
 
-def load_problemset():
+# load problemset into file, and return problemset object
+def load_problemset(force_reload = False):
+
     problemset_response = api_call.Codeforces.get_problemset()
 
     problemset_file = open(config.cf_problemset_path, "w")

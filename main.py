@@ -17,7 +17,7 @@ def print_user_list(handle : str):
     load_data.load_user_submission(handle)
     user_diff_cnt = load_data.load_user_diff_submissions(handle)
     problemset_diff_cnt = json.load(open(config.cf_problemset_diff_cnt_path, 'r'))
-    print(user_diff_cnt)
+    #print(user_diff_cnt)
     low, high, step = 800, 3500, 100 
 
     for rating_int in range(low, high+step, step):
@@ -26,4 +26,4 @@ def print_user_list(handle : str):
         user_diff_cnt[rating_int]["count"])
 
 
-print_user_list('tourist')
+print_user_list('iamujj.15')

@@ -1,6 +1,8 @@
 {
     "last_load_time" : {
         "problemset" : 0,
-        "problemset_diff_cnt" : 0
+        "user_submissions" : {
+            "tourist" : 0
+        }
     }
 }
