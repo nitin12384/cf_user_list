@@ -30,7 +30,10 @@ def generate_problemset_diff_cnt(problemset):
 
 
 def generate_user_diff_submissions(submissions, problemset_diff_cnt):
+    logger.log("Grouping user submissions difficulty wise...")
+
     user_diff_submissions = {}
+    
     low, high, step = 800, 3500, 100
     for rating_int in range(low, high+step, step):
         rating = str(rating_int)
@@ -45,25 +48,35 @@ def generate_user_diff_submissions(submissions, problemset_diff_cnt):
     
 
     for submission in submissions:
+
+        if "verdict" not in submission:
+            # System testing is going on .
+            # Skip this submission for now.
+            continue
+
         if submission["verdict"] == "OK":
             problem_id = str(submission["problem"]["contestId"]) + "-" + submission["problem"]["index"] 
             
-            try:
-                rating = submission["problem"]["rating"]
-                user_diff_submissions[rating]["problems"].add(problem_id)
-            except KeyError:
+            if "rating" not in submission["problem"]:
                 solved_rating_unavailable.add(problem_id)
-                pass
+            else :
+                rating = str(submission["problem"]["rating"])
+                user_diff_submissions[rating]["problems"].add(problem_id)
 
     
-    for rating in range(low, high+step, step):
+    for rating_int in range(low, high+step, step):
+        rating = str(rating_int)
         user_diff_submissions[rating]["problems"] = list(user_diff_submissions[rating]["problems"])
-        user_diff_submissions[rating]["count"] = len(user_diff_submissions[rating]["problems"])
-        num_solved += user_diff_submissions[rating]["count"]
+        user_diff_submissions[rating]["count_solved"] = len(user_diff_submissions[rating]["problems"])
+        num_solved += user_diff_submissions[rating]["count_solved"]
+
     
+    logger.debug("Num of solved with rating unavail = " + str(len(solved_rating_unavailable)))
+
     num_solved += len(solved_rating_unavailable)
 
-    user_diff_submissions["total_count"] = num_solved
+
+    user_diff_submissions["total_solved_count"] = num_solved
 
     return user_diff_submissions
 
@@ -106,7 +119,7 @@ def load_problemset(force_reload = False, return_problemset = False):
         return problemset_diff_cnt
 
 # Only return the difficulty wise submissions
-def load_user_submission(handle : str, problemset_diff_cnt , force_reload = False):
+def load_user_submission(handle : str, force_reload = False):
     last_load = tool_config.cf_tool_config.get_last_load_sub(handle)
     cur_time = time.time_ns()
     
@@ -115,21 +128,26 @@ def load_user_submission(handle : str, problemset_diff_cnt , force_reload = Fals
     
     # No need to reload
     if cur_time - last_load < config.cf_user_submission_reload_lim_ns and (not force_reload):
+        logger.log("Reading submission data from saved file.")
         with open(user_diff_sub_file_path, "r") as f :
             user_diff_sub = json.load(f)
     else:
+        logger.log("Reloading submissions.")
         submissions_file_path = config.cf_user_submission_base_path + '/' + handle + ".json"
         
         submissions_resp = api_call.Codeforces.get_user_submissions(handle)
         submissions = submissions_resp["result"]
-        user_diff_submissions = generate_user_diff_submissions(submissions, problemset_diff_cnt)    
+        problemset_diff_cnt = load_problemset()
+        user_diff_submissions = generate_user_diff_submissions(submissions, problemset_diff_cnt) 
+        tool_config.cf_tool_config.set_last_load_sub(handle, time.time_ns())   
 
         with open(submissions_file_path, "w") as submissions_file :
             json.dump(submissions, submissions_file)
         
         with open(user_diff_sub_file_path, "w") as user_diff_sub_file:
             json.dump(user_diff_submissions, user_diff_sub_file)
-        
+
+    logger.log("Done.")        
     return user_diff_sub
 
 

@@ -27,7 +27,7 @@ class ToolConfig:
         return config_obj 
 
     def __init__(self, tool_config_path : str):
-        self.tool_config = ToolConfig.load_tool_config()
+        self.tool_config = ToolConfig.load_tool_config(tool_config_path)
         self.tool_config_path = tool_config_path
         atexit.register(self.on_exit)
     
@@ -40,14 +40,14 @@ class ToolConfig:
     def get_last_load_sub(self, handle:str):
         result = 0
         try:
-            result = self.tool_config["last_load_time"]["submissions"][handle]
+            result = self.tool_config["last_load_time"]["user_submissions"][handle]
         except KeyError:
-            self.tool_config["last_load_time"]["submissions"][handle] = 0
+            self.tool_config["last_load_time"]["user_submissions"][handle] = 0
 
         return result
 
     def set_last_load_sub(self, handle:str, load_time_ns:int):
-        self.tool_config["last_load_time"]["submissions"][handle] = load_time_ns
+        self.tool_config["last_load_time"]["user_submissions"][handle] = load_time_ns
 
     def on_exit(self):
         json.dump(self.tool_config, open(self.tool_config_path, "w"))
