@@ -55,6 +55,11 @@ def generate_user_diff_submissions(submissions, problemset_diff_cnt):
             continue
 
         if submission["verdict"] == "OK":
+
+            # contestId can be absent dont know
+            if "contestId" not in submission["problem"] :
+                continue
+
             problem_id = str(submission["problem"]["contestId"]) + "-" + submission["problem"]["index"] 
             
             if "rating" not in submission["problem"]:
