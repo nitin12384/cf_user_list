@@ -1,6 +1,7 @@
 # cf_user_list
 
 ## What it can do 
+Find the count and the list of problems solved by a handle on codeforces, grouped according to problem difficulty rating
 
 ## Requirements
 Python version - 3.10.6
@@ -17,3 +18,4 @@ Python version - 3.10.6
     - load_data.load_user_submission("`<your_handle>`")
 5. Run the main.py file.
     - $ `python3 main.py`
+6. A file will be generated containing submission details of handle difficulty wise in `data/codeforces/diff_submissions/<your_handle>.json`
